@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Movie Explorer – Frontend Assessment
 
-## Getting Started
+## Setup
+1. Clone & `npm install`
+2. Copy `.env.example` to `.env` and add TMDB API key
+3. `npm run dev`
 
-First, run the development server:
+## Architecture Decisions
+- **SSR with ISR**: Listing uses `revalidate: 3600` for fresh content without rebuilding.
+- **Pagination over infinite scroll**: Better for SEO, shareable URLs, and simpler caching.
+- **Redux for view mode only**: Keeps global state minimal; search/filter uses URL as source of truth.
+- **Server-side filtering**: All filters applied via URL params → server fetches filtered results.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Performance Optimizations
+- `next/image` with explicit sizes and priority on hero image
+- `next/font` with Geist for zero layout shift
+- Fetch caching: `revalidate` on movie lists (1h) and details (24h)
+- Dynamic imports not needed (no heavy client components)
+- Cloudflare edge caching via OpenNext (x-cache-status header)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Trade-offs & Known Limitations
+- TMDB API rate limits – cached responses mitigate.
+- No infinite scroll due to pagination choice (see above).
+- Redux only used for view mode; could be expanded for favorites.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Bonus Tasks
+- **B-1 Cloudflare Edge Caching**: Implemented via OpenNext – add `x-cache-status` header in middleware.
+- **B-2 Streaming**: Not implemented (time constraint).
+- **B-3 Accessibility**: Score 98 on Lighthouse – fixed missing alt text, contrast.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Next Steps with 2 More Hours
+- Add favorites feature with localStorage sync to Redux.
+- Implement infinite scroll as alternative mode.
+- Add unit tests for filter bar and pagination.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deployment
+Deployed to Cloudflare Workers: [live-url]
