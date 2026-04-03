@@ -51,7 +51,7 @@ export default function MovieCard({
           </div>
 
           {/* Year badge - bottom left on hover */}
-          <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm rounded-md px-2 py-1 text-xs text-black font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center gap-1">
+          <div className="absolute bottom-2 left-2 bg-white backdrop-blur-sm rounded-md px-2 py-1 text-xs text-black font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center gap-1">
             <FaCalendarAlt className="w-3 h-3" />
             <span>{year}</span>
           </div>
@@ -59,7 +59,7 @@ export default function MovieCard({
 
         {/* Content */}
         <div className="p-3 bg-white/30 backdrop-blur-sm">
-          <h3 className="font-semibold text-black line-clamp-1 group-hover:text-blue-300 transition-colors">
+          <h3 className="font-semibold text-black line-clamp-1 transition-colors">
             {movie.title}
           </h3>
           <div className="flex justify-between items-center mt-1 text-xs">

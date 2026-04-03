@@ -12,20 +12,19 @@ import {
   setGenre,
   setYear,
   clearFilters,
-  hydrateFilters,
 } from "@/stores/features/movieSlice";
 import MovieCard from "@/components/MovieCard";
 import MovieCardSkeleton from "@/components/MovieCardSkeleton";
 import Image from "next/image";
 import logo from "@/public/android-chrome-192x192.png";
 
-// ✅ Dynamic imports – these will be loaded only when needed
 const FilterControls = dynamic(() => import("@/components/FilterControls"), {
   ssr: false,
   loading: () => (
     <div className="h-[100px] animate-pulse bg-gray-800 rounded-lg" />
   ),
 });
+
 const Pagination = dynamic(() => import("@/components/Pagination"), {
   ssr: false,
   loading: () => (
@@ -38,42 +37,49 @@ export default function HomePage() {
   const router = useRouter();
   const pathname = usePathname();
   const dispatch = useAppDispatch();
-  const { movies, genres, totalPages, currentPage, filters, loading, error } =
-    useAppSelector((state) => state.movies);
 
+  const { movies, genres, totalPages, loading, error } = useAppSelector(
+    (state) => state.movies,
+  );
+
+  const initialFetchDone = useRef(false);
+
+  // Read from URL directly
+  const urlPage = parseInt(searchParams.get("page") || "1");
+  const urlQuery = searchParams.get("query") || "";
+  const urlGenre = searchParams.get("genre") || "";
+  const urlYear = searchParams.get("year") || "";
+
+  const filtersFromUrl = { query: urlQuery, genre: urlGenre, year: urlYear };
   const genresMap = new Map(genres.map((g) => [g.id, g.name]));
-  const hasHydrated = useRef(false);
 
+  // Update Redux when URL changes (for filter controls display)
   useEffect(() => {
-    const handlePageShow = (event: PageTransitionEvent) => {
-      if (event.persisted) {
-        // Page was restored from bfcache – refresh data if needed
-        dispatch(fetchMovies({ page: currentPage, filters }));
-      }
-    };
-    window.addEventListener("pageshow", handlePageShow);
-    return () => window.removeEventListener("pageshow", handlePageShow);
-  }, []);
+    dispatch(setQuery(urlQuery));
+    dispatch(setGenre(urlGenre));
+    dispatch(setYear(urlYear));
+    dispatch(setPage(urlPage));
+  }, [dispatch, urlQuery, urlGenre, urlYear, urlPage]);
 
-  // Hydrate from URL once
+  // Fetch genres once
   useEffect(() => {
-    if (!hasHydrated.current) {
-      const page = parseInt(searchParams.get("page") || "1");
-      const query = searchParams.get("query") || "";
-      const genre = searchParams.get("genre") || "";
-      const year = searchParams.get("year") || "";
-      dispatch(hydrateFilters({ query, genre, year, page }));
-      hasHydrated.current = true;
-    }
     dispatch(fetchGenres());
-  }, []);
+  }, [dispatch]);
 
-  // One initial fetch after hydration
+  // Fetch movies using URL values directly (once on mount)
   useEffect(() => {
-    if (hasHydrated.current) {
-      dispatch(fetchMovies({ page: currentPage, filters }));
+    if (!initialFetchDone.current) {
+      initialFetchDone.current = true;
+      dispatch(fetchMovies({ page: urlPage, filters: filtersFromUrl }));
     }
   }, []);
+
+  // When URL changes (user interaction), fetch new movies
+  useEffect(() => {
+    if (initialFetchDone.current) {
+      dispatch(fetchMovies({ page: urlPage, filters: filtersFromUrl }));
+    }
+  }, [dispatch, urlPage, urlQuery, urlGenre, urlYear]);
 
   // Preload first movie poster
   useEffect(() => {
@@ -87,53 +93,52 @@ export default function HomePage() {
     }
   }, [movies]);
 
-  // URL sync helper
-  const updateUrl = (page: number, newFilters: typeof filters) => {
+  // Back/forward cache support
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        dispatch(fetchMovies({ page: urlPage, filters: filtersFromUrl }));
+      }
+    };
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, [dispatch, urlPage, urlQuery, urlGenre, urlYear]);
+
+  // Update URL (called from handlers)
+  const updateUrl = (newPage: number, newFilters: typeof filtersFromUrl) => {
     const params = new URLSearchParams();
     if (newFilters.query) params.set("query", newFilters.query);
     if (newFilters.genre) params.set("genre", newFilters.genre);
     if (newFilters.year) params.set("year", newFilters.year);
-    if (page !== 1) params.set("page", page.toString());
+    if (newPage !== 1) params.set("page", newPage.toString());
     const newUrl = params.toString()
       ? `${pathname}?${params.toString()}`
       : pathname;
-    router.replace(newUrl, { scroll: false });
+    router.push(newUrl, { scroll: false });
   };
 
   const handleSearch = (term: string) => {
-    dispatch(setQuery(term));
-    updateUrl(1, { ...filters, query: term });
-    dispatch(fetchMovies({ page: 1, filters: { ...filters, query: term } }));
+    updateUrl(1, { ...filtersFromUrl, query: term });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleGenreChange = (value: string) => {
-    dispatch(setGenre(value));
-    updateUrl(1, { ...filters, genre: value });
-    dispatch(fetchMovies({ page: 1, filters: { ...filters, genre: value } }));
+    updateUrl(1, { ...filtersFromUrl, genre: value });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleYearChange = (value: string) => {
-    dispatch(setYear(value));
-    updateUrl(1, { ...filters, year: value });
-    dispatch(fetchMovies({ page: 1, filters: { ...filters, year: value } }));
+    updateUrl(1, { ...filtersFromUrl, year: value });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleClearFilters = () => {
-    dispatch(clearFilters());
     updateUrl(1, { query: "", genre: "", year: "" });
-    dispatch(
-      fetchMovies({ page: 1, filters: { query: "", genre: "", year: "" } }),
-    );
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handlePageChange = (page: number) => {
-    dispatch(setPage(page));
-    updateUrl(page, filters);
-    dispatch(fetchMovies({ page, filters }));
+  const handlePageChange = (newPage: number) => {
+    updateUrl(newPage, filtersFromUrl);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -146,9 +151,9 @@ export default function HomePage() {
           <div className="container mx-auto px-4 py-3">
             <FilterControls
               genres={genres}
-              selectedGenre={filters.genre}
-              selectedYear={filters.year}
-              initialQuery={filters.query}
+              selectedGenre={urlGenre}
+              selectedYear={urlYear}
+              initialQuery={urlQuery}
               onSearch={handleSearch}
               onGenreChange={handleGenreChange}
               onYearChange={handleYearChange}
@@ -183,7 +188,7 @@ export default function HomePage() {
                 ))}
               </div>
               <Pagination
-                currentPage={currentPage}
+                currentPage={urlPage}
                 totalPages={totalPages}
                 onPageChange={handlePageChange}
               />

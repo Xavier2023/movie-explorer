@@ -89,22 +89,6 @@ export default async function MovieDetail({ params }: PageProps) {
 
   return (
     <>
-      {/* Sticky Header */}
-      <header className="sticky top-0 z-50 bg-black/40 backdrop-blur-md border-b-[0.5px] border-[#333] shadow-sm">
-        <div className="container mx-auto px-4 py-3 max-w-8xl">
-          <div className="flex items-center gap-3">
-            <Image
-              src={logo}
-              alt="Movie Explorer"
-              className="w-8 h-8 md:w-10 md:h-10"
-              priority
-            />
-            <h1 className="text-xl md:text-2xl font-bold text-white">
-              Movie Explorer
-            </h1>
-          </div>
-        </div>
-      </header>
 
       {/* Main Content with CSS Gradient Background (no network request) */}
       <main className="relative min-h-screen">
