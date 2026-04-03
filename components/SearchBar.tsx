@@ -1,33 +1,35 @@
 "use client";
-import { forwardRef } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { useDebouncedCallback } from "use-debounce";
+import { forwardRef, useRef, useCallback } from "react";
 
-const SearchBar = forwardRef<HTMLInputElement, { initialQuery: string }>(
-  ({ initialQuery }, ref) => {
-    const router = useRouter();
-    const pathname = usePathname();
+const SearchBar = forwardRef<
+  HTMLInputElement,
+  { initialQuery: string; onSearch: (term: string) => void }
+>(({ initialQuery, onSearch }, ref) => {
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    const handleSearch = useDebouncedCallback((term: string) => {
-      const params = new URLSearchParams(window.location.search);
-      if (term) params.set("query", term);
-      else params.delete("query");
-      params.set("page", "1");
-      router.replace(`${pathname}?${params.toString()}`);
-    }, 300);
+  const handleSearch = useCallback(
+    (term: string) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      timeoutRef.current = setTimeout(() => {
+        onSearch(term);
+      }, 300);
+    },
+    [onSearch],
+  );
 
-    return (
-      <input
-        ref={ref}
-        type="text"
-        placeholder="Search movies..."
-        defaultValue={initialQuery}
-        onChange={(e) => handleSearch(e.target.value)}
-        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-      />
-    );
-  },
-);
+  return (
+    <input
+      ref={ref}
+      type="text"
+      placeholder="Search movies..."
+      defaultValue={initialQuery}
+      onChange={(e) => handleSearch(e.target.value)}
+      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+    />
+  );
+});
 
-SearchBar.displayName = "SearchBar";
+// SearchBar.displayName = "SearchBar";
 export default SearchBar;

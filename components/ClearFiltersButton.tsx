@@ -1,25 +1,25 @@
-'use client';
+"use client";
 
-import { useRouter, usePathname } from 'next/navigation';
+import { useRef } from "react";
 
-
-export default function ClearFiltersButton({ searchInputRef }: { searchInputRef?: React.RefObject<HTMLInputElement | null> }) {
-  const router = useRouter();
-  const pathname = usePathname();
-
+export default function ClearFiltersButton({
+  searchInputRef,
+  onClear,
+}: {
+  searchInputRef: React.RefObject<HTMLInputElement | null>;
+  onClear: () => void;
+}) {
   const handleClear = () => {
-    // Clear all filter params from URL
-    router.replace(pathname);
-    
-    // Clear search input field if ref provided
-    if (searchInputRef?.current) {
-      searchInputRef.current.value = '';
+    onClear();
+    if (searchInputRef.current) {
+      searchInputRef.current.value = "";
     }
   };
 
   return (
     <button
       onClick={handleClear}
+      aria-label="Clear all filters"
       className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
     >
       Clear Filters

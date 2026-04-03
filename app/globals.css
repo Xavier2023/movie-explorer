@@ -7,3 +7,8 @@
     @apply bg-gray-50 text-gray-900;
   }
 }
+
+/* In globals.css add a class */
+.bg-cinema {
+  background: radial-gradient(circle at 20% 50%, #1a1a2e, #16213e);
+}

@@ -1,37 +1,61 @@
-# Movie Explorer – Frontend Assessment
+# Movie Explorer – TMDB Frontend Assessment
 
-## Setup
-1. Clone & `npm install`
-2. Copy `.env.example` to `.env` and add TMDB API key
-3. `npm run dev`
+**Live URL:** [https://movie-explorer-your-name.vercel.app](https://movie-explorer-your-name.vercel.app)  
+**Repository:** [https://github.com/your-username/frontend-assessment-your-name](https://github.com/your-username/frontend-assessment-your-name)
 
-## Architecture Decisions
-- **SSR with ISR**: Listing uses `revalidate: 3600` for fresh content without rebuilding.
-- **Pagination over infinite scroll**: Better for SEO, shareable URLs, and simpler caching.
-- **Redux for view mode only**: Keeps global state minimal; search/filter uses URL as source of truth.
-- **Server-side filtering**: All filters applied via URL params → server fetches filtered results.
+---
 
-## Performance Optimizations
-- `next/image` with explicit sizes and priority on hero image
-- `next/font` with Geist for zero layout shift
-- Fetch caching: `revalidate` on movie lists (1h) and details (24h)
-- Dynamic imports not needed (no heavy client components)
-- Cloudflare edge caching via OpenNext (x-cache-status header)
+## Why Vercel instead of Cloudflare Workers?
 
-## Trade-offs & Known Limitations
-- TMDB API rate limits – cached responses mitigate.
-- No infinite scroll due to pagination choice (see above).
-- Redux only used for view mode; could be expanded for favorites.
+Although the assessment prefers Cloudflare Workers, I chose **Vercel** for these reasons:
 
-## Bonus Tasks
-- **B-1 Cloudflare Edge Caching**: Implemented via OpenNext – add `x-cache-status` header in middleware.
-- **B-2 Streaming**: Not implemented (time constraint).
-- **B-3 Accessibility**: Score 98 on Lighthouse – fixed missing alt text, contrast.
+- **Native Next.js support** – Vercel is built by the same team as Next.js, offering zero‑configuration deployment, automatic ISR (Incremental Static Regeneration), and built‑in image optimisation with `next/image`.
+- **Faster development** – Preview deployments for every Git push, instant rollbacks, and no need to configure `wrangler.toml` or the OpenNext adapter. This saved time that was invested in performance and feature completeness.
+- **Edge caching is still available** – Vercel’s global Edge Network caches static assets and API responses via `Cache-Control` headers, achieving similar performance to Cloudflare Workers.
+- **Free tier is generous** – No hidden costs or complex setup, allowing me to focus on the core requirements.
 
-## Next Steps with 2 More Hours
-- Add favorites feature with localStorage sync to Redux.
-- Implement infinite scroll as alternative mode.
-- Add unit tests for filter bar and pagination.
+The trade‑off is losing the `x-cache-status` bonus (B‑1), but all other required metrics (LCP, CLS, INP) are met and exceed the targets.
 
-## Deployment
-Deployed to Cloudflare Workers: [live-url]
+---
+
+## Setup Instructions (under 5 commands)
+
+1. **Clone the repository**
+   git clone https://github.com/your-username/frontend-assessment-your-name.git
+   cd frontend-assessment-your-name
+
+2. **Install dependencies**
+npm install
+
+3. **Set up environment variables**
+cp .env.example .env.local
+Then add your TMDB API key to .env.local (get one for free at TMDB).
+
+4. **Run the development server**
+npm run dev
+Open http://localhost:3000 to see the app.
+
+5. **Build for production (optional)**
+npm run build && npm start
+
+
+
+## Folder Structure (feature‑based)
+
+├── app/                    # Next.js App Router pages (server components)
+│   ├── movie/[id]/         # Dynamic detail page
+│   ├── layout.tsx          # Root layout with fonts & preconnect
+│   ├── page.tsx            # Listing page (server component)
+│   ├── loading.tsx         # Route‑level skeleton
+│   └── error.tsx           # Error boundary
+├── components/             # Reusable UI components
+│   ├── MovieCard.tsx       # Movie card (client component)
+│   ├── MovieList.tsx       # Grid/list wrapper (client, Redux)
+│   ├── FilterControls.tsx  # Search bar + filters + clear button
+│   ├── Pagination.tsx      # Numbered pagination
+│   └── ui/                 # Custom dropdown (SimpleSelect)
+├── lib/                    # API clients and utilities
+│   └── tmdb.ts             # TMDB fetch functions with cache options
+├── store/                  # Redux slice for view mode (only)
+├── types/                  # Shared TypeScript interfaces
+└── public/                 # Static assets (favicon, placeholder)

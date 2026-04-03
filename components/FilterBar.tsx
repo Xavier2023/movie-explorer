@@ -1,57 +1,60 @@
-'use client';
-import { useRouter, usePathname } from 'next/navigation';
-import { Genre } from '@/types/movie';
+"use client";
+import { Genre } from "@/types/movie";
+import SimpleSelect, { SelectOption } from "@/components/SimpleSelectField";
 
 export default function FilterBar({
   genres,
   selectedGenre,
   selectedYear,
+  onGenreChange,
+  onYearChange,
 }: {
   genres: Genre[];
   selectedGenre: string;
   selectedYear: string;
+  onGenreChange: (value: string) => void;
+  onYearChange: (value: string) => void;
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
-
-  const updateFilter = (key: string, value: string) => {
-    const params = new URLSearchParams(window.location.search);
-    if (value) params.set(key, value);
-    else params.delete(key);
-    params.set('page', '1');
-    router.replace(`${pathname}?${params.toString()}`);
-  };
-
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: currentYear - 1989 }, (_, i) => currentYear - i);
+  const years = Array.from(
+    { length: currentYear - 1989 },
+    (_, i) => currentYear - i,
+  );
+
+  const genreOptions: SelectOption[] = [
+    { value: "", label: "All Genres" },
+    ...genres.map((genre) => ({
+      value: genre.id.toString(),
+      label: genre.name,
+    })),
+  ];
+
+  const yearOptions: SelectOption[] = [
+    { value: "", label: "All Years" },
+    ...years.map((year) => ({
+      value: year.toString(),
+      label: year.toString(),
+    })),
+  ];
 
   return (
     <div className="flex gap-2">
-      <select
-        value={selectedGenre}
-        onChange={(e) => updateFilter('genre', e.target.value)}
-        className="px-3 py-2 border border-gray-300 rounded-lg bg-white"
-      >
-        <option value="">All Genres</option>
-        {genres.map((genre) => (
-          <option key={genre.id} value={genre.id}>
-            {genre.name}
-          </option>
-        ))}
-      </select>
-
-      <select
-        value={selectedYear}
-        onChange={(e) => updateFilter('year', e.target.value)}
-        className="px-3 py-2 border border-gray-300 rounded-lg bg-white"
-      >
-        <option value="">All Years</option>
-        {years.map((year) => (
-          <option key={year} value={year}>
-            {year}
-          </option>
-        ))}
-      </select>
+      <div className="w-48">
+        <SimpleSelect
+          value={selectedGenre}
+          onChange={onGenreChange}
+          options={genreOptions}
+          placeholder="Select Genre"
+        />
+      </div>
+      <div className="w-40">
+        <SimpleSelect
+          value={selectedYear}
+          onChange={onYearChange}
+          options={yearOptions}
+          placeholder="Select Year"
+        />
+      </div>
     </div>
   );
 }

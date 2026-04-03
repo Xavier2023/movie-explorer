@@ -5,21 +5,21 @@ import dynamic from "next/dynamic";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/stores/hooks";
 import {
-  fetchMovies,
-  fetchGenres,
-  setPage,
-  setQuery,
-  setGenre,
-  setYear,
-  clearFilters,
-  hydrateFilters,
-} from "@/stores/features/movieSlice";
-import MovieCard from "@/components/MovieCard";
+  fetchTvShows,
+  fetchTvGenres,
+  setTvPage,
+  setTvQuery,
+  setTvGenre,
+  setTvYear,
+  clearTvFilters,
+  hydrateTvFilters,
+} from "@/stores/features/tvShowSlice";
+import TvCard from "@/components/TvCard";
 import MovieCardSkeleton from "@/components/MovieCardSkeleton";
 import Image from "next/image";
 import logo from "@/public/android-chrome-192x192.png";
 
-// ✅ Dynamic imports – these will be loaded only when needed
+// Dynamic imports for heavy components
 const FilterControls = dynamic(() => import("@/components/FilterControls"), {
   ssr: false,
   loading: () => (
@@ -33,27 +33,16 @@ const Pagination = dynamic(() => import("@/components/Pagination"), {
   ),
 });
 
-export default function HomePage() {
+export default function TvPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const dispatch = useAppDispatch();
-  const { movies, genres, totalPages, currentPage, filters, loading, error } =
-    useAppSelector((state) => state.movies);
+  const { shows, genres, totalPages, currentPage, filters, loading, error } =
+    useAppSelector((state) => state.tvShows);
 
   const genresMap = new Map(genres.map((g) => [g.id, g.name]));
   const hasHydrated = useRef(false);
-
-  useEffect(() => {
-    const handlePageShow = (event: PageTransitionEvent) => {
-      if (event.persisted) {
-        // Page was restored from bfcache – refresh data if needed
-        dispatch(fetchMovies({ page: currentPage, filters }));
-      }
-    };
-    window.addEventListener("pageshow", handlePageShow);
-    return () => window.removeEventListener("pageshow", handlePageShow);
-  }, []);
 
   // Hydrate from URL once
   useEffect(() => {
@@ -62,30 +51,30 @@ export default function HomePage() {
       const query = searchParams.get("query") || "";
       const genre = searchParams.get("genre") || "";
       const year = searchParams.get("year") || "";
-      dispatch(hydrateFilters({ query, genre, year, page }));
+      dispatch(hydrateTvFilters({ query, genre, year, page }));
       hasHydrated.current = true;
     }
-    dispatch(fetchGenres());
+    dispatch(fetchTvGenres());
   }, []);
 
-  // One initial fetch after hydration
+  // Initial fetch after hydration
   useEffect(() => {
     if (hasHydrated.current) {
-      dispatch(fetchMovies({ page: currentPage, filters }));
+      dispatch(fetchTvShows({ page: currentPage, filters }));
     }
   }, []);
 
-  // Preload first movie poster
+  // Preload first poster
   useEffect(() => {
-    if (movies.length > 0 && movies[0].poster_path) {
-      const posterUrl = `https://image.tmdb.org/t/p/w342${movies[0].poster_path}`;
+    if (shows.length > 0 && shows[0].poster_path) {
+      const posterUrl = `https://image.tmdb.org/t/p/w342${shows[0].poster_path}`;
       const link = document.createElement("link");
       link.rel = "preload";
       link.as = "image";
       link.href = posterUrl;
       document.head.appendChild(link);
     }
-  }, [movies]);
+  }, [shows]);
 
   // URL sync helper
   const updateUrl = (page: number, newFilters: typeof filters) => {
@@ -100,45 +89,47 @@ export default function HomePage() {
     router.replace(newUrl, { scroll: false });
   };
 
+  // Handlers
   const handleSearch = (term: string) => {
-    dispatch(setQuery(term));
+    dispatch(setTvQuery(term));
     updateUrl(1, { ...filters, query: term });
-    dispatch(fetchMovies({ page: 1, filters: { ...filters, query: term } }));
+    dispatch(fetchTvShows({ page: 1, filters: { ...filters, query: term } }));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleGenreChange = (value: string) => {
-    dispatch(setGenre(value));
+    dispatch(setTvGenre(value));
     updateUrl(1, { ...filters, genre: value });
-    dispatch(fetchMovies({ page: 1, filters: { ...filters, genre: value } }));
+    dispatch(fetchTvShows({ page: 1, filters: { ...filters, genre: value } }));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleYearChange = (value: string) => {
-    dispatch(setYear(value));
+    dispatch(setTvYear(value));
     updateUrl(1, { ...filters, year: value });
-    dispatch(fetchMovies({ page: 1, filters: { ...filters, year: value } }));
+    dispatch(fetchTvShows({ page: 1, filters: { ...filters, year: value } }));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleClearFilters = () => {
-    dispatch(clearFilters());
+    dispatch(clearTvFilters());
     updateUrl(1, { query: "", genre: "", year: "" });
     dispatch(
-      fetchMovies({ page: 1, filters: { query: "", genre: "", year: "" } }),
+      fetchTvShows({ page: 1, filters: { query: "", genre: "", year: "" } }),
     );
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handlePageChange = (page: number) => {
-    dispatch(setPage(page));
+    dispatch(setTvPage(page));
     updateUrl(page, filters);
-    dispatch(fetchMovies({ page, filters }));
+    dispatch(fetchTvShows({ page, filters }));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
     <div className="relative min-h-screen">
+      {/* CSS Gradient Background */}
       <div className="fixed inset-0 z-0 bg-gradient-to-br from-gray-900 via-gray-800 to-black" />
 
       <div className="relative z-10">
@@ -166,17 +157,17 @@ export default function HomePage() {
             </div>
           ) : error ? (
             <div className="text-center py-12 text-red-500">Error: {error}</div>
-          ) : movies.length === 0 ? (
+          ) : shows.length === 0 ? (
             <div className="text-center py-12 text-gray-200">
-              No movies found. Try different filters.
+              No TV shows found. Try different filters.
             </div>
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {movies.map((movie, idx) => (
-                  <MovieCard
-                    key={movie.id}
-                    movie={movie}
+                {shows.map((show, idx) => (
+                  <TvCard
+                    key={show.id}
+                    show={show}
                     priority={idx === 0}
                     genresMap={genresMap}
                   />
