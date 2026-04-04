@@ -13,11 +13,11 @@ export default function Navbar() {
         <div className="flex items-center justify-between">
           {/* Logo and Title */}
           <div className="flex items-center gap-3">
-            <Image src={logo} alt="Movie Explorer" className="w-10 h-10" priority />
-            <h1 className="text-2xl font-bold text-white">Movie Explorer</h1>
+            <Image src={logo} alt="Movie Explorer" className="md:w-10 md:h-10 w-6 h-6" priority />
+            <h1 className="md:text-2xl  text-lg font-bold text-white">Movie Explorer</h1>
           </div>
           {/* Navigation Links */}
-          <nav className="flex gap-6" aria-label="Main navigation">
+          <nav className="flex text-sm md:text-base  gap-6" aria-label="Main navigation">
             <Link
               href="/"
               className={`text-white hover:text-blue-300 transition pb-1 ${
